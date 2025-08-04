@@ -1,0 +1,51 @@
+# Core ML and Deep Learning
+torch>=2.1.0
+transformers>=4.40.0
+datasets>=2.12.0
+accelerate>=0.28.0
+safetensors>=0.4.0
+
+# Model Loading and Optimization
+bitsandbytes>=0.42.0
+flash-attn>=2.5.0
+huggingface_hub>=0.20.0
+
+# Essential Interpretability Tools
+transformer-lens>=1.0.0  # Critical for mechanistic interpretability
+captum>=0.6.0  # For activation analysis
+bertviz>=1.4.0  # Attention visualization
+
+# Data Analysis and Statistics
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+statsmodels>=0.14.0  # For statistical significance testing
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0  # Interactive plots for activation patterns
+
+# Text Processing
+tokenizers>=0.13.0
+spacy>=3.6.0
+
+# Experiment Management
+wandb>=0.15.0  # Track experiments
+tqdm>=4.65.0  # Progress bars
+
+# Jupyter Environment
+jupyter>=1.0.0
+ipywidgets>=8.0.0
+
+# Memory Monitoring
+psutil>=5.9.0
+gpustat>=1.1.1
+
+# Testing
+pytest>=7.4.0
+
+# Model-specific utilities
+llama-cpp-python>=0.2.50  # Alternative inference engine
+vllm>=0.3.3  # High-performance inference for Llama/Gemma
+ctransformers>=0.2.27  # C++ transformers backend
