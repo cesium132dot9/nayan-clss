@@ -7,6 +7,7 @@
 ```python 
 !wget https://raw.githubusercontent.com/cesium132dot9/nayan-clss/refs/heads/main/requirements.txt
 !pip install -r requirements.txt
+python3 analyze_irony_FINAL.py
 ```
 
 #### Runpod/Local 
@@ -19,4 +20,5 @@ name_for_virtual_environment\Scripts\activate  # windows
 # source name_for_virtual_environment/bin/activate  # Linux/Mac
 
 pip install -r requirements.txt
+python3 analyze_irony_FINAL.py
 ```
