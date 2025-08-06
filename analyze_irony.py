@@ -33,7 +33,7 @@ from tqdm.auto import tqdm
 warnings.filterwarnings('ignore')
 torch.set_grad_enabled(False)
 torch.set_default_dtype(torch.float32)
-pio.renderers.default = "jupyterlab"
+#pio.renderers.default = "jupyterlab"
 pio.templates.default = "plotly_white"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -1244,7 +1244,7 @@ def main():
     
     summary_table = AdvancedVisualizationSuite.create_publication_summary_table(result)
     summary_table.write_html(os.path.join(config.output_dir, "statistical_summary.html"))
-    summary_table.show()
+    #summary_table.show()
     
     research_report = generate_research_report(result, config)
     with open(os.path.join(config.output_dir, "research_report.md"), 'w') as f:
