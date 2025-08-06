@@ -253,6 +253,15 @@ class IronicReboundAnalyzer:
         }
     
     def _enhanced_delta_spike_analysis(self, negative_prompt: str, neutral_prompt: str, concept: str) -> Dict[str, Any]:
+
+        neg_tokens = self._tokenize_prompt(negative_prompt)
+        neu_tokens = self._tokenize_prompt(neutral_prompt)
+
+        min_len = min(neg_tokens.shape[1], neu_tokens.shape[1])
+
+        if min_len < abs(min(self.config.temporal_positions, default=0)):
+            return self._empty_delta_spike_result()
+        
         neg_position_logits = self._extract_concept_logits_at_positions(negative_prompt, concept)
         neu_position_logits = self._extract_concept_logits_at_positions(neutral_prompt, concept)
         
