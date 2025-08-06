@@ -1,8 +1,11 @@
 torch
-transformers
+numpy
 pandas
 scipy
 plotly
 transformer-lens
 einops
+transformers
+ipython
 tqdm
+

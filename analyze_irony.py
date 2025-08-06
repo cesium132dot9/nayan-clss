@@ -580,7 +580,11 @@ class IronicReboundAnalyzer:
     def _behavioral_modification_analysis(self, base_prompt: str, concept: str) -> Dict[str, float]:
         baseline_logits = self._get_generation_logits(base_prompt)
         prohibited_logits = self._get_generation_logits(f"{base_prompt} Don't mention {concept}.")
-        
+        min_len=min(baseline_logits.shape[0], prohibited_logits.shape[0])
+        baseline_logits=baseline_logits[-min_len:]
+        prohibited_logits=prohibited_logits[-min_len:]
+
+
         concept_tokens = self._get_token_variants(concept)
         if not concept_tokens:
             return {'semantic_shift': 0.0, 'behavioral_change': False, 'concept_suppression': 0.0}
@@ -705,7 +709,7 @@ class IronicReboundAnalyzer:
         if concept_directions.shape[1] == 1:
             return concept_directions[:, 0]
         else:
-            U, S, V = torch.svd(concept_directions)
+            U, S, V = torch.svd(concept_directions.to(torch.float32))
             return U[:, 0] * S[0]
     
     def _get_token_variants(self, concept: str) -> List[int]:
