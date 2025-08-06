@@ -42,9 +42,9 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExperimentConfig:
     model_name: str = "meta-llama/Meta-Llama-3-8B-Instruct"
-    prompt_file: str = "synthetic_prompts.csv"
-    negative_col: str = "negative_instruction"
-    neutral_col: str = "neutral_instruction"
+    prompt_file: str = "multi_question_prompt_dataset.csv"
+    negative_col: str = "negative_prompt"
+    neutral_col: str = "neutral_prompt"
     max_sequence_length: int = 512
     n_bootstrap_samples: int = 10000
     confidence_level: float = 0.95
@@ -142,45 +142,6 @@ class GPUMemoryManager:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
-
-class ConceptExtractor:
-    NEGATION_PATTERNS = [
-        r"do not mention (?:a |an |the |any |this |that )?([a-zA-Z]+)",
-        r"don't mention (?:a |an |the |any |this |that )?([a-zA-Z]+)",
-        r"avoid (?:mentioning |talking about |discussing |saying |writing about )?(?:a |an |the |any |this |that )?([a-zA-Z]+)",
-        r"don't (?:talk about |discuss |say |write about |use |include )?(?:a |an |the |any |this |that )?(?:word |term )?([a-zA-Z]+)",
-        r"refrain from (?:mentioning |discussing |talking about |using )?(?:a |an |the |any |this |that )?([a-zA-Z]+)",
-        r"never mention (?:a |an |the |any |this |that )?([a-zA-Z]+)",
-        r"avoid (?:using )?the (?:word |topic |subject |term )?([a-zA-Z]+)",
-        r"do not (?:say |use |write |include ) (?:the word |anything about )?(?:a |an |the |any |this |that )?([a-zA-Z]+)",
-        r"without (?:mentioning |using |saying )?(?:a |an |the |any |this |that )?(?:word )?([a-zA-Z]+)",
-        r"but not (?:mentioning |about |the word )?([a-zA-Z]+)"
-    ]
-    
-    STOPWORDS = {'the', 'a', 'an', 'it', 'this', 'that', 'word', 'thing', 'anything', 'something', 
-                 'topic', 'subject', 'term', 'concept', 'idea', 'mention', 'say', 'discuss'}
-    
-    @staticmethod
-    def extract_forbidden_concept(negative_prompt: str) -> Optional[str]:
-        if not isinstance(negative_prompt, str):
-            return None
-        
-        prompt_lower = negative_prompt.lower().strip()
-        
-        for pattern in ConceptExtractor.NEGATION_PATTERNS:
-            match = re.search(pattern, prompt_lower)
-            if match:
-                concept = match.group(1).strip()
-                if concept not in ConceptExtractor.STOPWORDS and len(concept) > 2:
-                    return concept
-        
-        quoted_match = re.search(r'"([^"]+)"', negative_prompt)
-        if quoted_match:
-            concept = quoted_match.group(1).lower().strip()
-            if len(concept.split()) == 1 and concept not in ConceptExtractor.STOPWORDS:
-                return concept
-        
-        return None
 
 class CorruptionMethods:
     @staticmethod
@@ -950,9 +911,8 @@ def run_ironic_rebound_experiment(config: ExperimentConfig) -> Optional[IronicRe
             logger.error(f"Cannot find or create {config.prompt_file}")
             return None
     
-    df_prompts['concept'] = df_prompts[config.negative_col].apply(
-        ConceptExtractor.extract_forbidden_concept
-    )
+    df_prompts['concept'] = df_prompts['forbidden_concept']
+
     df_prompts = df_prompts.dropna(subset=['concept'])
     
     if len(df_prompts) < config.min_samples:
