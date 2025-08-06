@@ -554,11 +554,11 @@ class IronicReboundAnalyzer:
         baseline_logits=baseline_logits[-min_len:]
         prohibited_logits=prohibited_logits[-min_len:]
 
-
-        concept_tokens = self._get_token_variants(concept)
+        # CORRECTED: Call the new function
+        concept_tokens = self._get_concept_token_ids(concept)
         if not concept_tokens:
             return {'semantic_shift': 0.0, 'behavioral_change': False, 'concept_suppression': 0.0}
-        
+
         baseline_probs = F.softmax(baseline_logits, dim=-1)[:, concept_tokens].max(dim=-1)[0]
         prohibited_probs = F.softmax(prohibited_logits, dim=-1)[:, concept_tokens].max(dim=-1)[0]
         
@@ -590,7 +590,8 @@ class IronicReboundAnalyzer:
         
         preferences = {}
         for alt in alternatives:
-            alt_tokens = self._get_token_variants(alt)
+            # CORRECTED: Call the new function
+            alt_tokens = self._get_concept_token_ids(alt)
             if alt_tokens:
                 preferences[alt] = logits[alt_tokens].max().item()
             else:
