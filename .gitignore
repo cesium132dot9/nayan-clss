@@ -1,0 +1,20 @@
+# Python virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Large model caches specified in the script
+/workspace/.cache/
+
+# Generated output files from the script
+# We ignore everything in results/, then make an exception for the .md file
+results/*
+!results/research_report.md
+output.log
+
+# IDE and OS specific files
+.vscode/
+.idea/
+.DS_Store
