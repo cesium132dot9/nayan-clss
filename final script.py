@@ -185,40 +185,40 @@ class SimplifiedIronicReboundExperiments:
         
         # Only process negative prompt IDs (0-1665) and match with corresponding neutral/positive
         for neg_id in range(len(neg_data)):
-            if neg_id in pivot_df.index:
-                row = pivot_df.loc[neg_id]
-                neutral_id = neg_id + 1666  # Corresponding neutral prompt ID
-                pos_id = neg_id + 3332      # Corresponding positive prompt ID
+            neutral_id = neg_id + 1666  # Corresponding neutral prompt ID  
+            pos_id = neg_id + 3332      # Corresponding positive prompt ID
+            
+            # Initialize log probabilities
+            logp_negative = 0
+            logp_neutral = 0
+            logp_positive = np.nan
+            
+            # Get negative log probability
+            if neg_id in pivot_df.index and 'negative' in pivot_df.columns:
+                logp_negative = pivot_df.loc[neg_id, 'negative']
                 
-                # Get log probabilities
-                logp_negative = row.get('negative', 0) if 'negative' in row else 0
-                logp_neutral = 0
-                logp_positive = np.nan
+            # Get neutral log probability  
+            if neutral_id in pivot_df.index and 'neutral' in pivot_df.columns:
+                logp_neutral = pivot_df.loc[neutral_id, 'neutral']
                 
-                # Try to find matching neutral prompt
-                if neutral_id in pivot_df.index:
-                    neutral_row = pivot_df.loc[neutral_id]
-                    logp_neutral = neutral_row.get('neutral', 0) if 'neutral' in neutral_row else 0
-                
-                # Try to find matching positive prompt  
-                if pos_id in pivot_df.index:
-                    pos_row = pivot_df.loc[pos_id]
-                    logp_positive = pos_row.get('positive', np.nan) if 'positive' in pos_row else np.nan
-                
-                # Only include if we have both negative and neutral non-zero values
-                if logp_negative != 0 and logp_neutral != 0:
-                    orig_row = dataset[dataset['id'] == neg_id]
-                    if len(orig_row) > 0:
-                        forbidden = orig_row.iloc[0]['forbidden_concept']
-                        delta = logp_neutral - logp_negative
-                        delta_results.append({
-                            'id': neg_id,
-                            'delta': delta,
-                            'logp_neutral': logp_neutral,
-                            'logp_negative': logp_negative,
-                            'logp_positive': logp_positive,
-                            'forbidden_concept': forbidden
-                        })
+            # Get positive log probability
+            if pos_id in pivot_df.index and 'positive' in pivot_df.columns:
+                logp_positive = pivot_df.loc[pos_id, 'positive']
+            
+            # Only include if we have both negative and neutral non-zero values
+            if logp_negative != 0 and logp_neutral != 0:
+                orig_row = dataset[dataset['id'] == neg_id]
+                if len(orig_row) > 0:
+                    forbidden = orig_row.iloc[0]['forbidden_concept']
+                    delta = logp_neutral - logp_negative
+                    delta_results.append({
+                        'id': neg_id,
+                        'delta': delta,
+                        'logp_neutral': logp_neutral,
+                        'logp_negative': logp_negative,
+                        'logp_positive': logp_positive,
+                        'forbidden_concept': forbidden
+                    })
         
         final_df = pd.DataFrame(delta_results)
         return final_df
