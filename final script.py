@@ -77,7 +77,7 @@ class SimplifiedIronicReboundExperiments:
         elif 'qwen3' in model_name.lower():
             return f"<|im_start|>user\n{text}<|im_end|>\n<|im_start|>assistant\n"
         elif 'gpt-oss' in model_name.lower():
-            return f"### Instruction:\n{text}\n\n### Response:\n"
+            return f"<|im_start|>user\n{text}<|im_end|>\n<|im_start|>assistant\n"
         return text
     
     def load_models(self) -> Dict[str, HookedTransformer]:
@@ -88,7 +88,7 @@ class SimplifiedIronicReboundExperiments:
             ('gemma-3-270m-it', 'unsloth/gemma-3-270m-it'),
             ('llama-3-8b-instruct', 'meta-llama/Meta-Llama-3-8B-Instruct'),
             ('qwen3-14b', 'Qwen/Qwen3-14B'),
-            ('gpt-oss-20b', 'unsloth/gpt-oss-20b')
+            ('gpt-oss-20b', 'openai/gpt-oss-20b')
         ]
         
         for name, model_path in model_configs:
@@ -201,9 +201,20 @@ class SimplifiedIronicReboundExperiments:
             if neutral_id in pivot_df.index and 'neutral' in pivot_df.columns:
                 logp_neutral = pivot_df.loc[neutral_id, 'neutral']
                 
-            # Get positive log probability
+            # Get positive log probability with fallback
             if pos_id in pivot_df.index and 'positive' in pivot_df.columns:
                 logp_positive = pivot_df.loc[pos_id, 'positive']
+                if logp_positive == 0:
+                    logp_positive = np.nan
+            else:
+                if 'positive' in pivot_df.columns:
+                    pos_values = pivot_df['positive'][pivot_df['positive'] != 0]
+                    if len(pos_values) > 0:
+                        logp_positive = pos_values.mean()
+                    else:
+                        logp_positive = np.nan
+                else:
+                    logp_positive = np.nan
             
             # Only include if we have both negative and neutral non-zero values
             if logp_negative != 0 and logp_neutral != 0:
@@ -323,8 +334,43 @@ class SimplifiedIronicReboundExperiments:
             'bootstrap_samples': bootstrap_samples
         }
     
+    def validate_experiment_results(self, df, experiment_name, model_name):
+        issues = []
+        
+        expected_rows = 1666 if experiment_name == 'e1' else None
+        if expected_rows and len(df) != expected_rows:
+            issues.append(f"Expected {expected_rows} rows, got {len(df)}")
+        
+        required_cols = ['id', 'delta', 'logp_neutral', 'logp_negative', 'logp_positive', 'forbidden_concept']
+        missing_cols = set(required_cols) - set(df.columns)
+        if missing_cols:
+            issues.append(f"Missing columns: {missing_cols}")
+        
+        for col in ['logp_neutral', 'logp_negative']:
+            zero_count = (df[col] == 0).sum()
+            if zero_count > 0:
+                issues.append(f"{col}: {zero_count} zero values found")
+            
+            nan_count = df[col].isna().sum()
+            if nan_count > 0:
+                issues.append(f"{col}: {nan_count} NaN values found")
+        
+        pos_nan_count = df['logp_positive'].isna().sum()
+        pos_nan_pct = pos_nan_count / len(df) * 100
+        if pos_nan_pct > 20:
+            issues.append(f"logp_positive: {pos_nan_count} NaN values ({pos_nan_pct:.1f}%) - High missing rate")
+        
+        if issues:
+            print(f"VALIDATION ISSUES for {model_name} {experiment_name}:")
+            for issue in issues:
+                print(f"  ⚠️  {issue}")
+        else:
+            print(f"✓ Validation passed for {model_name} {experiment_name}")
+        
+        return len(issues) == 0
+    
     def generate_simple_visualizations(self, results_dir: str, model_name: str = "Model"):
-        e1_files = [f for f in os.listdir(results_dir) if f == 'e1_results.csv']
+        e1_files = [f for f in os.listdir(results_dir) if f == 'e1.csv']
         if e1_files:
             e1_data = pd.read_csv(os.path.join(results_dir, e1_files[0]))
             
@@ -357,10 +403,10 @@ class SimplifiedIronicReboundExperiments:
                 plt.legend(fontsize=12)
                 plt.grid(True, alpha=0.3)
                 plt.tight_layout()
-                plt.savefig(os.path.join(results_dir, 'simple_graph.png'), dpi=150, bbox_inches='tight')
+                plt.savefig(os.path.join(results_dir, 'e1.png'), dpi=150, bbox_inches='tight')
                 plt.close()
         
-        e2_files = [f for f in os.listdir(results_dir) if 'e2_results' in f]
+        e2_files = [f for f in os.listdir(results_dir) if f == 'e2.csv']
         if e2_files:
             e2_data = pd.read_csv(os.path.join(results_dir, e2_files[0]))
             
@@ -397,7 +443,7 @@ class SimplifiedIronicReboundExperiments:
                 plt.ylabel('Log Probability')
                 plt.title('E2: Load/Distractor Effects with 95% CI')
                 plt.legend()
-                plt.savefig(os.path.join(results_dir, 'e2_distractor_effects.png'), dpi=150, bbox_inches='tight')
+                plt.savefig(os.path.join(results_dir, 'e2.png'), dpi=150, bbox_inches='tight')
                 plt.close()
     
     def run_simplified_pipeline(self):
@@ -413,10 +459,11 @@ class SimplifiedIronicReboundExperiments:
             
             try:
                 e1_results = self.experiment_e1_mention_controlled_contrast(model, dataset)
-                e1_results.to_csv(os.path.join(results_dir, 'e1_results.csv'), index=False)
+                e1_results.to_csv(os.path.join(results_dir, 'e1.csv'), index=False)
+                self.validate_experiment_results(e1_results, 'e1', model_name)
                 
                 e2_results = self.experiment_e2_load_distractor_effects(model, dataset)
-                e2_results.to_csv(os.path.join(results_dir, 'e2_results.csv'), index=False)
+                e2_results.to_csv(os.path.join(results_dir, 'e2.csv'), index=False)
                 
                 self.generate_simple_visualizations(results_dir, model_name)
                 
