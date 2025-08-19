@@ -1,0 +1,2 @@
+model,e1_mean_delta,e1_p_perm,e1_ci_lower,e1_ci_upper,total_samples_processed,e1_valid_deltas,e4_samples
+gpt2-small,0.17914375,0.238,-0.10982953125,0.4492564062499999,5000,5000,29988
