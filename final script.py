@@ -117,83 +117,74 @@ class SimplifiedIronicReboundExperiments:
         dataset = dataset.copy()
         dataset['proxy_concept'] = dataset['forbidden_concept'].map(proxy_dict)
         
-        results = []
         batch_size = self.get_optimal_batch_size(getattr(model.cfg, 'model_name', 'unknown'))
-        
-        neg_data = dataset[dataset['prompt_type'] == 'negative'].copy()
-        neu_data = dataset[dataset['prompt_type'] == 'neutral'].copy()
-        pos_data = dataset[dataset['prompt_type'] == 'positive'].copy()
-        
         model_name = getattr(model.cfg, 'model_name', 'unknown')
         
-        all_data = []
-        for df, ptype in [(neg_data, 'negative'), (neu_data, 'neutral'), (pos_data, 'positive')]:
-            for _, row in df.iterrows():
-                formatted_prompt = self.format_prompt(row['prompt_text'], model_name)
-                all_data.append({
-                    'id': row['id'],
-                    'prompt_type': ptype,
-                    'prompt_text': formatted_prompt,
-                    'forbidden_concept': row['forbidden_concept']
-                })
+        neg_data = dataset[dataset['prompt_type'] == 'negative'].copy()
+        neu_data = dataset[dataset['prompt_type'] == 'neutral'].copy() 
+        pos_data = dataset[dataset['prompt_type'] == 'positive'].copy()
         
-        for i in range(0, len(all_data), batch_size):
-            batch = all_data[i:i+batch_size]
-            prompts = [item['prompt_text'] for item in batch]
-            
-            try:
-                if hasattr(model, 'tokenizer'):
-                    tokens = model.tokenizer(prompts, padding=True, return_tensors='pt', 
-                                           truncation=True, max_length=512).to(self.device)
-                    token_ids = tokens['input_ids']
-                else:
-                    token_ids = model.to_tokens(prompts, prepend_bos=True)
+        logp_results = {}
+        
+        for data_type, data in [('negative', neg_data), ('neutral', neu_data), ('positive', pos_data)]:
+            for i in range(0, len(data), batch_size):
+                batch_data = data.iloc[i:i+batch_size]
+                prompts = []
+                batch_info = []
                 
-                with torch.no_grad():
-                    logits = model(token_ids)[:, -1, :]
+                for _, row in batch_data.iterrows():
+                    formatted_prompt = self.format_prompt(row['prompt_text'], model_name)
+                    prompts.append(formatted_prompt)
+                    batch_info.append({
+                        'id': row['id'],
+                        'forbidden_concept': row['forbidden_concept']
+                    })
+                
+                try:
+                    if hasattr(model, 'tokenizer'):
+                        tokens = model.tokenizer(prompts, padding=True, return_tensors='pt', 
+                                               truncation=True, max_length=512).to(self.device)
+                        token_ids = tokens['input_ids']
+                    else:
+                        token_ids = model.to_tokens(prompts, prepend_bos=True)
                     
-                for j, item in enumerate(batch):
-                    forbidden = item['forbidden_concept']
-                    try:
-                        forbidden_token = model.to_single_token(forbidden)
-                        logp = F.log_softmax(logits[j], dim=-1)[forbidden_token].item()
-                        results.append({
-                            'id': item['id'],
-                            'prompt_type': item['prompt_type'],
-                            'logp': logp,
-                            'forbidden_concept': forbidden
-                        })
-                    except:
-                        results.append({
-                            'id': item['id'],
-                            'prompt_type': item['prompt_type'],
-                            'logp': np.nan,
-                            'forbidden_concept': forbidden
-                        })
-            except:
-                continue
-        
-        results_df = pd.DataFrame(results)
-        
-        if len(results_df) == 0 or 'logp' not in results_df.columns:
-            return pd.DataFrame(columns=['id', 'delta', 'logp_neutral', 'logp_negative', 'logp_positive', 'forbidden_concept'])
-        
-        pivot_df = pd.pivot_table(results_df, values='logp', index='id', 
-                                 columns='prompt_type', fill_value=0, aggfunc='mean')
+                    with torch.no_grad():
+                        logits = model(token_ids)[:, -1, :]
+                        
+                    for j, info in enumerate(batch_info):
+                        try:
+                            forbidden_token = model.to_single_token(info['forbidden_concept'])
+                            logp = F.log_softmax(logits[j], dim=-1)[forbidden_token].item()
+                            
+                            key = info['id']
+                            if key not in logp_results:
+                                logp_results[key] = {}
+                            logp_results[key][data_type] = logp
+                            logp_results[key]['forbidden_concept'] = info['forbidden_concept']
+                        except:
+                            continue
+                except:
+                    continue
         
         delta_results = []
-        for idx, row in pivot_df.iterrows():
-            if 'neutral' in row and 'negative' in row:
-                orig_row = dataset[dataset['id'] == idx]
-                if len(orig_row) > 0:
-                    forbidden = orig_row.iloc[0]['forbidden_concept']
-                    delta = row['neutral'] - row['negative']
+        for neg_id in range(len(neg_data)):
+            if neg_id in logp_results and 'negative' in logp_results[neg_id]:
+                neutral_id = neg_id + 1666
+                pos_id = neg_id + 3332
+                
+                logp_negative = logp_results[neg_id].get('negative')
+                logp_neutral = logp_results.get(neutral_id, {}).get('neutral')
+                logp_positive = logp_results.get(pos_id, {}).get('positive')
+                forbidden = logp_results[neg_id].get('forbidden_concept')
+                
+                if logp_negative is not None and logp_neutral is not None and forbidden:
+                    delta = logp_neutral - logp_negative
                     delta_results.append({
-                        'id': idx,
+                        'id': neg_id,
                         'delta': delta,
-                        'logp_neutral': row['neutral'],
-                        'logp_negative': row['negative'],
-                        'logp_positive': row.get('positive', np.nan),
+                        'logp_neutral': logp_neutral,
+                        'logp_negative': logp_negative,
+                        'logp_positive': logp_positive if logp_positive is not None else np.nan,
                         'forbidden_concept': forbidden
                     })
         
