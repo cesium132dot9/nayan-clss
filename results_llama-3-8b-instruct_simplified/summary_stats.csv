@@ -1,0 +1,2 @@
+model,e1_mean_delta,e1_p_perm,e1_ci_lower,e1_ci_upper,total_samples_processed,e1_valid_deltas,e2_samples
+llama-3-8b-instruct,1.7715711284513807,0.0,1.4743322328931572,2.059503488895558,5000,1666,29988

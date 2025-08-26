@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:transformerlensorg.github.io)",
+      "WebSearch",
+      "Bash(nvcc:*)",
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(fuser:*)",
+      "Bash(kill:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

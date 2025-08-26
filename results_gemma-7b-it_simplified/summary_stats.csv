@@ -1,0 +1,2 @@
+model,e1_mean_delta,e1_p_perm,e1_ci_lower,e1_ci_upper,total_samples_processed,e1_valid_deltas,e2_samples
+gemma-7b-it,-4.131114945978392,0.0,-4.456208733493397,-3.793652460984394,5000,1666,29988

@@ -1,0 +1,2 @@
+model,e1_mean_delta,e1_p_perm,e1_ci_lower,e1_ci_upper,total_samples_processed,e1_valid_deltas,e2_samples
+opt-2.7b,-2.9290403661464586,0.0,-3.0864945978391356,-2.7703500150060028,5000,1666,29988

@@ -1,0 +1,2 @@
+model,e1_mean_delta,e1_p_perm,e1_ci_lower,e1_ci_upper,total_samples_processed,e1_valid_deltas,e2_samples
+qwen3-14b,0.1955282112845138,0.093,-0.03792767106842737,0.42516131452581024,5000,1666,29988
