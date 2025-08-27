@@ -9,14 +9,9 @@ apt-get update && apt-get install -y nodejs
 
 npm install -g @anthropic-ai/claude-code
 
-    npm install -g @google/gemini-cli
+npm install -g @google/gemini-cli
 
 /login
 /exit
 
 /init
-
-
-            ("pythia-410m",   "EleutherAI/pythia-410m"),   # ~302M (TL table)
-            ("bloom-560m",    "bigscience/bloom-560m"),    # ~560M (HF card)
-            ("gpt-neox-20b",  "EleutherAI/gpt-neox-20b"),  # ~20B (HF card)

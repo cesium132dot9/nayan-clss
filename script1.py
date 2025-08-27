@@ -749,7 +749,6 @@ class SimplifiedIronicReboundExperiments:
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         model_configs = [
-            ("gpt-oss-20b", "openai/gpt-oss-20b"),
             ("gemma-3-270m-it", "google/gemma-3-270m-it"),
             ("lfm2-350m", "LiquidAI/LFM2-350M")
         ]

@@ -87,10 +87,8 @@ class SimplifiedIronicReboundExperiments:
         return size_mapping.get(model_name, 64)
     
     def format_prompt(self, text, model_name):
-        if 'gemma-3' in model_name.lower():
-            return f"<start_of_turn>user\n{text}<end_of_turn>\n<start_of_turn>model\n"
-        elif 'gemma' in model_name.lower():
-            return f"[INST] {text} [/INST]"
+        if 'gemma' in model_name.lower():
+            return f"<bos><start_of_turn>user\n{text}<end_of_turn>\n<start_of_turn>model\n"
         elif 'llama-3' in model_name.lower():
             return f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n{text}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
         elif 'qwen3' in model_name.lower():
@@ -661,14 +659,7 @@ class SimplifiedIronicReboundExperiments:
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         model_configs = [
-            ("qwen3-14b", "Qwen/Qwen2.5-14B-Instruct"),
-            ("pythia-410m", "EleutherAI/pythia-410m"),
-            ("opt-2.7b", "facebook/opt-2.7b"),
-            ("llama-3-8b-instruct", "meta-llama/Meta-Llama-3-8B-Instruct"),
-            ("gpt2-small", "gpt2"),
-            ("gemma-7b-it", "google/gemma-7b-it"),
-            ("bloom-560m", "bigscience/bloom-560m"),
-            ("gpt-neox-20b", "EleutherAI/gpt-neox-20b")
+            ("gemma-7b-it", "google/gemma-7b-it")
         ]
 
         for model_name, model_path in model_configs:
