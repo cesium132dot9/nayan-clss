@@ -94,7 +94,7 @@ class SimplifiedIronicReboundExperiments:
         elif 'qwen3' in model_name.lower():
             return f"<|im_start|>user\n{text}<|im_end|>\n<|im_start|>assistant\n"
         elif 'gpt-oss' in model_name.lower():
-            return f"<|im_start|>user\n{text}<|im_end|>\n<|im_start|>assistant\n"
+            return f"<|start|>user<|message|>{text}<|end|><|start|>assistant<|channel|>final<|message|>"
         return text
     
     def load_single_model(self, model_name: str, model_path: str) -> HookedTransformer:
@@ -659,7 +659,7 @@ class SimplifiedIronicReboundExperiments:
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         model_configs = [
-            ("gemma-7b-it", "google/gemma-7b-it")
+            ("gpt-oss-20b", "openai/gpt-oss-20b")
         ]
 
         for model_name, model_path in model_configs:

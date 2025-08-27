@@ -101,10 +101,13 @@ class SimplifiedIronicReboundExperiments:
         }
         return size_mapping.get(model_name, 64)
     
-    def format_prompt_with_template(self, text: str, tokenizer: AutoTokenizer) -> str:
-        """Format prompt using the tokenizer's chat template if available."""
+    def format_prompt(self, text: str, model_name: str, tokenizer: AutoTokenizer) -> str:
+        """Applies the correct prompt format for a given model."""
+        if 'gpt-oss' in model_name.lower():
+            return f"<|start|>user<|message|>{text}<|end|><|start|>assistant<|channel|>final<|message|>"
+        
         try:
-            # Try to use the tokenizer's chat template
+            # Try to use the tokenizer's chat template for other models
             messages = [{"role": "user", "content": text}]
             formatted_prompt = tokenizer.apply_chat_template(
                 messages, 
@@ -240,7 +243,7 @@ class SimplifiedIronicReboundExperiments:
         all_data = []
         for df, ptype in [(neg_data, 'negative'), (neu_data, 'neutral'), (pos_data, 'positive')]:
             for _, row in df.iterrows():
-                formatted_prompt = self.format_prompt_with_template(row['prompt_text'], tokenizer)
+                formatted_prompt = self.format_prompt(row['prompt_text'], model_name, tokenizer)
                 all_data.append({
                     'id': row['id'],
                     'prompt_type': ptype,
@@ -436,10 +439,11 @@ class SimplifiedIronicReboundExperiments:
                                 distractor = f" {row['prompt_text']}" * (length // len(row['prompt_text'].split()))
                             
                             modified_prompt = row['prompt_text'] + distractor
+                            formatted_prompt = self.format_prompt(modified_prompt, model_name, tokenizer)
                             
                             try:
                                 # Tokenize using Hugging Face tokenizer
-                                tokens = tokenizer([modified_prompt], return_tensors='pt', truncation=True, max_length=4096)
+                                tokens = tokenizer([formatted_prompt], return_tensors='pt', truncation=True, max_length=4096)
                                 
                                 # Move to model's device
                                 device = next(model.parameters()).device
@@ -749,8 +753,7 @@ class SimplifiedIronicReboundExperiments:
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         model_configs = [
-            ("gemma-3-270m-it", "google/gemma-3-270m-it"),
-            ("lfm2-350m", "LiquidAI/LFM2-350M")
+            ("gpt-oss-20b", "openai/gpt-oss-20b")
         ]
 
         for model_name, model_path in model_configs:
